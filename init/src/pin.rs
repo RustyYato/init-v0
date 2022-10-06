@@ -7,6 +7,13 @@ use core::{mem::MaybeUninit, pin::Pin};
 mod raw;
 pub use raw::PinnedUninit;
 
+impl<T> Default for PinnedUninit<'_, [T]> {
+    fn default() -> Self {
+        // SAFETY: a zero-sized slice can always be pinned
+        unsafe { Self::new_unchecked(Default::default()) }
+    }
+}
+
 impl<'a, T: ?Sized + Unpin> PinnedUninit<'a, T> {
     /// Analogous to [`Pin::new`]
     pub fn new(uninit: Uninit<'a, T>) -> Self {
