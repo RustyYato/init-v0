@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use crate::{Init, Initialize, TryInitialize, Uninit};
 
 /// A writer to an uninitialized slice
-pub struct Writer<'a, T> {
+pub struct SliceWriter<'a, T> {
     uninit: Uninit<'a, [T]>,
     current: *mut T,
     remaining: usize,
@@ -11,7 +11,7 @@ pub struct Writer<'a, T> {
 }
 
 // SAFETY: this only drops the T, so is trivially correct for `#[may_dangle]`
-unsafe impl<#[may_dangle] T> Drop for Writer<'_, T> {
+unsafe impl<#[may_dangle] T> Drop for SliceWriter<'_, T> {
     fn drop(&mut self) {
         let len = self.uninit.len();
         let ptr = self.uninit.as_mut_ptr().cast::<T>();
@@ -22,7 +22,7 @@ unsafe impl<#[may_dangle] T> Drop for Writer<'_, T> {
     }
 }
 
-impl<'a, T> Writer<'a, T> {
+impl<'a, T> SliceWriter<'a, T> {
     /// create a new writer
     pub fn new(mut uninit: Uninit<'a, [T]>) -> Self {
         let len = uninit.len();

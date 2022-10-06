@@ -270,12 +270,3 @@ pub unsafe fn init_in_place<T: ?Sized, I: Initialize<T>>(init: I, ptr: *mut T) {
         }
     }
 }
-
-fn initializer(value: i32) -> impl Initialize<[i32]> {
-    slice::SliceInit::new(InitFn::new(move |uninit| uninit.write(value)))
-}
-
-///
-pub fn asm(ptr: Uninit<[i32]>, value: i32) -> Init<'_, [i32]> {
-    initializer(value).init(ptr)
-}

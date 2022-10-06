@@ -1,7 +1,7 @@
 //! slice initializers
 
 mod writer;
-pub use writer::Writer;
+pub use writer::SliceWriter;
 
 use crate::TryInitialize;
 
@@ -19,7 +19,7 @@ impl<I: TryInitialize<T> + Clone, T> TryInitialize<[T]> for SliceInit<I> {
     type Error = I::Error;
 
     fn try_init(self, ptr: crate::Uninit<[T]>) -> Result<crate::Init<[T]>, Self::Error> {
-        let mut writer = Writer::new(ptr);
+        let mut writer = SliceWriter::new(ptr);
 
         while !writer.is_finished() {
             writer.try_init(self.0.clone())?
