@@ -91,7 +91,7 @@ impl<'a, T> Uninit<'a, [T]> {
     /// # Panics
     ///
     /// If the length of this slice is not equal to T, this method panics
-    pub fn write_slice<const N: usize>(mut self, slice: &[T]) -> Init<'a, [T]>
+    pub fn write_slice(mut self, slice: &[T]) -> Init<'a, [T]>
     where
         T: Copy,
     {

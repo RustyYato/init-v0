@@ -3,6 +3,7 @@ use core::{marker::PhantomData, ptr::NonNull};
 struct Invariant<'a>(&'a mut &'a mut ());
 
 /// A pointer to uninitialized but allocated memory
+#[repr(transparent)]
 pub struct Uninit<'a, T: ?Sized> {
     ptr: NonNull<T>,
     lt: PhantomData<(&'a T, Invariant<'a>)>,
@@ -70,6 +71,7 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
 ///     // ...
 /// }
 /// ```
+#[repr(transparent)]
 pub struct Init<'a, T: ?Sized> {
     ptr: NonNull<T>,
     lt: PhantomData<(&'a T, Invariant<'a>, T)>,

@@ -12,6 +12,7 @@
 
 mod ptr;
 pub use ptr::{Init, Uninit};
+pub mod pin;
 
 /// A trait to initialize a T
 pub trait TryInitialize<T: ?Sized> {
