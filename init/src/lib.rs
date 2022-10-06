@@ -69,7 +69,7 @@ impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> 
     }
 }
 
-impl<T, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> for I {
+impl<T: ?Sized, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> for I {
     #[inline]
     fn init(self, ptr: Uninit<T>) -> Init<T> {
         match self.try_init(ptr) {
@@ -90,7 +90,7 @@ impl<F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>, E, T: ?Sized> TryPin
     }
 }
 
-impl<T, I: TryPinInitialize<T, Error = core::convert::Infallible>> PinInitialize<T> for I {
+impl<T: ?Sized, I: TryPinInitialize<T, Error = core::convert::Infallible>> PinInitialize<T> for I {
     fn pin_init(self, ptr: PinnedUninit<T>) -> Pin<Init<T>> {
         match self.try_pin_init(ptr) {
             Ok(init) => init,
@@ -269,4 +269,13 @@ pub unsafe fn init_in_place<T: ?Sized, I: Initialize<T>>(init: I, ptr: *mut T) {
             );
         }
     }
+}
+
+fn initializer(value: i32) -> impl Initialize<[i32]> {
+    slice::SliceInit::new(InitFn::new(move |uninit| uninit.write(value)))
+}
+
+///
+pub fn asm(ptr: Uninit<[i32]>, value: i32) -> Init<'_, [i32]> {
+    initializer(value).init(ptr)
 }
