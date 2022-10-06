@@ -31,6 +31,37 @@ pub trait Initialize<T: ?Sized>: TryInitialize<T, Error = core::convert::Infalli
     fn init(self, ptr: Uninit<T>) -> Init<T>;
 }
 
+impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> for F {
+    type Error = E;
+
+    #[inline]
+    fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
+        self(ptr)
+    }
+}
+
+/// A function which will initialize without error
+pub struct InfallibleFn<F> {
+    func: F,
+}
+
+impl<F> InfallibleFn<F> {
+    /// Create a new initializer for infallible functions
+    #[inline]
+    pub fn new(func: F) -> Self {
+        Self { func }
+    }
+}
+
+impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InfallibleFn<F> {
+    type Error = core::convert::Infallible;
+
+    #[inline]
+    fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
+        Ok((self.func)(ptr))
+    }
+}
+
 impl<T, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> for I {
     #[inline]
     fn init(self, ptr: Uninit<T>) -> Init<T> {
