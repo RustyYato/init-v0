@@ -40,20 +40,33 @@ impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> 
     }
 }
 
+impl<T, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> for I {
+    #[inline]
+    fn init(self, ptr: Uninit<T>) -> Init<T> {
+        match self.try_init(ptr) {
+            Ok(init) => init,
+            Err(err) => match err {},
+        }
+    }
+}
+
 /// A function which will initialize without error
-pub struct InfallibleFn<F> {
+pub struct InitFn<F> {
     func: F,
 }
 
-impl<F> InfallibleFn<F> {
+impl<F> InitFn<F> {
     /// Create a new initializer for infallible functions
     #[inline]
-    pub fn new(func: F) -> Self {
+    pub fn new<T: ?Sized>(func: F) -> Self
+    where
+        F: FnOnce(Uninit<T>) -> Init<T>,
+    {
         Self { func }
     }
 }
 
-impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InfallibleFn<F> {
+impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F> {
     type Error = core::convert::Infallible;
 
     #[inline]
@@ -62,13 +75,28 @@ impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for Infallible
     }
 }
 
-impl<T, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> for I {
+/// A function which will initialize without error
+pub struct TryInitFn<F> {
+    func: F,
+}
+
+impl<F> TryInitFn<F> {
+    /// Create a new initializer for infallible functions
     #[inline]
-    fn init(self, ptr: Uninit<T>) -> Init<T> {
-        match self.try_init(ptr) {
-            Ok(init) => init,
-            Err(err) => match err {},
-        }
+    pub fn new<T: ?Sized, E>(func: F) -> Self
+    where
+        F: FnOnce(Uninit<T>) -> Result<Init<T>, E>,
+    {
+        Self { func }
+    }
+}
+
+impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> for TryInitFn<F> {
+    type Error = E;
+
+    #[inline]
+    fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
+        (self.func)(ptr)
     }
 }
 
