@@ -17,6 +17,8 @@ use pin::PinnedUninit;
 pub use ptr::{Init, Uninit};
 pub mod pin;
 
+pub mod iter;
+
 /// A trait to initialize a T
 pub trait TryInitialize<T: ?Sized> {
     /// the error reported by this
