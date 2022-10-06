@@ -51,6 +51,7 @@ impl<T, I: TryInitialize<T, Error = core::convert::Infallible>> Initialize<T> fo
 }
 
 /// A function which will initialize without error
+#[derive(Debug, Clone, Copy)]
 pub struct InitFn<F> {
     func: F,
 }
@@ -76,6 +77,7 @@ impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F> 
 }
 
 /// A function which will initialize without error
+#[derive(Debug, Clone, Copy)]
 pub struct TryInitFn<F> {
     func: F,
 }
