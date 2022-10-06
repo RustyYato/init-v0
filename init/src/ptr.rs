@@ -5,6 +5,14 @@ use core::{mem::MaybeUninit, ptr::NonNull};
 
 pub use raw::{Init, Uninit};
 
+impl<T> Default for Uninit<'_, [T]> {
+    fn default() -> Self {
+        let ptr = ptr::slice_from_raw_parts_mut(ptr::NonNull::dangling().as_ptr(), 0);
+        // SAFETY: an empty slice only needs to be aligned, and NonNull::dangling() takes care of that
+        unsafe { Self::from_raw(ptr) }
+    }
+}
+
 impl<'a, T: ?Sized> Uninit<'a, T> {
     /// Extracts the initialized value from the `Uninit<T>` container.
     /// This is a great way to ensure that the data will get dropped,

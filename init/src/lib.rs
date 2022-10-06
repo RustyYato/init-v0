@@ -19,6 +19,8 @@ pub mod pin;
 
 pub mod iter;
 
+pub mod slice;
+
 /// A trait to initialize a T
 pub trait TryInitialize<T: ?Sized> {
     /// the error reported by this
