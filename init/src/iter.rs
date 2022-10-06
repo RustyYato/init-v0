@@ -1,6 +1,8 @@
 //! slice iterators for [`Uninit`], [`PinnedUninit`], and [`Init`]
 
-use core::{mem, ptr::NonNull};
+use core::{marker::PhantomData, mem, pin::Pin, ptr::NonNull};
+
+use crate::{pin::PinnedUninit, Init, Uninit};
 
 struct RawIter<T> {
     start: NonNull<T>,
@@ -26,6 +28,15 @@ impl<T> RawIter<T> {
                 end: unsafe { ptr.as_ptr().add(len) },
             }
         }
+    }
+
+    fn as_slice(&self) -> NonNull<[T]> {
+        let len = self.len();
+
+        let ptr = core::ptr::slice_from_raw_parts_mut(self.start.as_ptr(), len);
+
+        // SAFETY: self.start is non-null
+        unsafe { NonNull::new_unchecked(ptr) }
     }
 }
 
@@ -123,6 +134,247 @@ impl<T> DoubleEndedIterator for RawIter<T> {
             // SAFETY: the end pointer is always non-null for non-zero sized T
             Some(unsafe { NonNull::new_unchecked(self.end as _) })
         }
+    }
+}
+
+/// An iterator over uninit pointers
+pub struct UninitIter<'a, T> {
+    raw: RawIter<T>,
+    _lt: PhantomData<Uninit<'a, [T]>>,
+}
+
+impl<'a, T> UninitIter<'a, T> {
+    /// Create a new iterator over uninit pointers
+    pub fn new(uninit: Uninit<'a, [T]>) -> Self {
+        Self {
+            // SAFETY: the uninit is guaranteed to live for at least as long as 'a
+            raw: unsafe { RawIter::new(uninit.as_non_null_ptr()) },
+            _lt: PhantomData,
+        }
+    }
+
+    /// Get the rest of the slice
+    pub fn finish(self) -> Uninit<'a, [T]> {
+        let ptr = self.raw.as_slice();
+        // SAFETY: the slice came from an Uninit so is allocated
+        // and the slice doesn't alias with any pointer given out by
+        // the iterator
+        unsafe { Uninit::from_raw_nonnull(ptr) }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for UninitIter<'a, T> {}
+impl<'a, T> Iterator for UninitIter<'a, T> {
+    type Item = Uninit<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next();
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { Uninit::from_raw_nonnull(ptr) })
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth(n);
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { Uninit::from_raw_nonnull(ptr) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.raw.size_hint()
+    }
+}
+impl<'a, T> DoubleEndedIterator for UninitIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next_back();
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { Uninit::from_raw_nonnull(ptr) })
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth_back(n);
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { Uninit::from_raw_nonnull(ptr) })
+    }
+}
+
+/// An iterator over Init pointers
+pub struct InitIter<'a, T> {
+    raw: RawIter<T>,
+    _lt: PhantomData<Init<'a, [T]>>,
+}
+
+// SAFETY: this drop impl only drops Ts so is trivially correct for #[may_dangle]
+unsafe impl<#[may_dangle] T> Drop for InitIter<'_, T> {
+    fn drop(&mut self) {
+        // SAFETY: the slice came from an Init so is initialized
+        // and the slice doesn't alias with any pointer given out by
+        // the iterator
+        unsafe { self.raw.as_slice().as_ptr().drop_in_place() }
+    }
+}
+
+impl<'a, T> InitIter<'a, T> {
+    /// Create a new iterator over Init pointers
+    pub fn new(init: Init<'a, [T]>) -> Self {
+        Self {
+            // SAFETY: the Init is guaranteed to live for at least as long as 'a
+            raw: unsafe { RawIter::new(init.into_raw()) },
+            _lt: PhantomData,
+        }
+    }
+
+    /// Get the rest of the slice
+    pub fn finish(self) -> Init<'a, [T]> {
+        let ptr = self.raw.as_slice();
+        core::mem::forget(self);
+        // SAFETY: the slice came from an Init so is initialized
+        // and the slice doesn't alias with any pointer given out by
+        // the iterator
+        unsafe { Init::from_raw_nonnull(ptr) }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for InitIter<'a, T> {}
+impl<'a, T> Iterator for InitIter<'a, T> {
+    type Item = Init<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next();
+        // SAFETY: this pointer is derived from an Init pointer
+        ptr.map(|ptr| unsafe { Init::from_raw_nonnull(ptr) })
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth(n);
+        // SAFETY: this pointer is derived from an Init pointer
+        ptr.map(|ptr| unsafe { Init::from_raw_nonnull(ptr) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.raw.size_hint()
+    }
+}
+impl<'a, T> DoubleEndedIterator for InitIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next_back();
+        // SAFETY: this pointer is derived from an Init pointer
+        ptr.map(|ptr| unsafe { Init::from_raw_nonnull(ptr) })
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth_back(n);
+        // SAFETY: this pointer is derived from an Init pointer
+        ptr.map(|ptr| unsafe { Init::from_raw_nonnull(ptr) })
+    }
+}
+
+/// An iterator over uninit pointers
+pub struct PinnedUninitIter<'a, T> {
+    raw: UninitIter<'a, T>,
+}
+
+impl<'a, T> PinnedUninitIter<'a, T> {
+    /// Create a new iterator over uninit pointers
+    pub fn new(uninit: PinnedUninit<'a, [T]>) -> Self {
+        Self {
+            // SAFETY: PinnedUninitIter type represents the pinned type-state
+            raw: UninitIter::new(unsafe { uninit.into_inner_unchecked() }),
+        }
+    }
+
+    /// Get the rest of the slice
+    pub fn finish(self) -> PinnedUninit<'a, [T]> {
+        // SAFETY: the slice came from a `PinnedUninit` so it is in the pinned state
+        unsafe { PinnedUninit::new_unchecked(self.raw.finish()) }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for PinnedUninitIter<'a, T> {}
+impl<'a, T> Iterator for PinnedUninitIter<'a, T> {
+    type Item = PinnedUninit<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next();
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { PinnedUninit::new_unchecked(ptr) })
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth(n);
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { PinnedUninit::new_unchecked(ptr) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.raw.size_hint()
+    }
+}
+impl<'a, T> DoubleEndedIterator for PinnedUninitIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next_back();
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { PinnedUninit::new_unchecked(ptr) })
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth_back(n);
+        // SAFETY: this pointer is derived from an uninit pointer
+        ptr.map(|ptr| unsafe { PinnedUninit::new_unchecked(ptr) })
+    }
+}
+
+/// An iterator over init pointers
+pub struct PinnedInitIter<'a, T> {
+    raw: InitIter<'a, T>,
+}
+
+impl<'a, T> PinnedInitIter<'a, T> {
+    /// Create a new iterator over init pointers
+    pub fn new(init: Pin<Init<'a, [T]>>) -> Self {
+        Self {
+            // SAFETY: PinnedInitIter type represents the pinned type-state
+            raw: InitIter::new(unsafe { Pin::into_inner_unchecked(init) }),
+        }
+    }
+
+    /// Get the rest of the slice
+    pub fn finish(self) -> Pin<Init<'a, [T]>> {
+        // SAFETY: the slice came from a `Pin` so it is in the pinned state
+        unsafe { Pin::new_unchecked(self.raw.finish()) }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for PinnedInitIter<'a, T> {}
+impl<'a, T> Iterator for PinnedInitIter<'a, T> {
+    type Item = Pin<Init<'a, T>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next();
+        // SAFETY: this pointer is derived from an pinned init pointer
+        ptr.map(|ptr| unsafe { Pin::new_unchecked(ptr) })
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth(n);
+        // SAFETY: this pointer is derived from an pinned init pointer
+        ptr.map(|ptr| unsafe { Pin::new_unchecked(ptr) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.raw.size_hint()
+    }
+}
+impl<'a, T> DoubleEndedIterator for PinnedInitIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let ptr = self.raw.next_back();
+        // SAFETY: this pointer is derived from an pinned init pointer
+        ptr.map(|ptr| unsafe { Pin::new_unchecked(ptr) })
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        let ptr = self.raw.nth_back(n);
+        // SAFETY: this pointer is derived from an pinned init pointer
+        ptr.map(|ptr| unsafe { Pin::new_unchecked(ptr) })
     }
 }
 
