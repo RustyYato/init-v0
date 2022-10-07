@@ -2,6 +2,7 @@
 
 use core::{
     alloc::{Layout, LayoutError},
+    fmt::Debug,
     pin::Pin,
     ptr::NonNull,
 };
@@ -20,8 +21,44 @@ pub enum AllocError<E> {
     Alloc(Layout),
 }
 
+#[cold]
+#[inline(never)]
+fn handle<E: Debug>(err: &AllocError<E>) -> ! {
+    match err {
+        AllocError::Init(err) => panic!("Failed to initialize value: {err:?}"),
+        AllocError::Layout(_) => panic!("Could not compute layout for value"),
+        AllocError::Alloc(layout) => alloc::handle_alloc_error(*layout),
+    }
+}
+
 /// create a new T, and initialize it in place
-pub fn emplace<T: ?Sized, L, I>(provider: L, init: I) -> Result<Box<T>, AllocError<I::Error>>
+pub fn emplace<T: ?Sized, L, I>(provider: L, init: I) -> Box<T>
+where
+    I: TryInitialize<T>,
+    L: LayoutProvider<T>,
+    I::Error: Debug,
+{
+    match try_emplace(provider, init) {
+        Ok(boxed) => boxed,
+        Err(ref err) => handle(err),
+    }
+}
+
+/// create a new T, and initialize it in place
+pub fn emplace_pin<T: ?Sized, L, I>(provider: L, init: I) -> Pin<Box<T>>
+where
+    I: TryPinInitialize<T>,
+    L: LayoutProvider<T>,
+    I::Error: Debug,
+{
+    match try_emplace_pin(provider, init) {
+        Ok(boxed) => boxed,
+        Err(ref err) => handle(err),
+    }
+}
+
+/// create a new T, and initialize it in place
+pub fn try_emplace<T: ?Sized, L, I>(provider: L, init: I) -> Result<Box<T>, AllocError<I::Error>>
 where
     I: TryInitialize<T>,
     L: LayoutProvider<T>,
@@ -76,7 +113,7 @@ where
 }
 
 /// create a new T, and initialize it in place
-pub fn emplace_pin<T: ?Sized, L, I>(
+pub fn try_emplace_pin<T: ?Sized, L, I>(
     provider: L,
     init: I,
 ) -> Result<Pin<Box<T>>, AllocError<I::Error>>
