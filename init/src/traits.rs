@@ -6,7 +6,7 @@ use core::{
     ptr::NonNull,
 };
 
-use crate::{pin_uninit::PinnedUninit, Init, Uninit};
+use crate::{pin::AsPinInit, pin_uninit::PinnedUninit, Init, Uninit};
 
 /// A layout provider takes a pair of an initializer and a type, and provides the layout that should be used for the type
 ///
@@ -40,6 +40,15 @@ pub trait TryInitialize<T: ?Sized> {
     /// if this function returns Ok, then the ptr was initialized
     /// otherwise, then the ptr may not be initialized
     fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error>;
+
+    /// Convert this TryInitialize to a TryPinInitialize
+    fn to_pin_init(self) -> AsPinInit<Self>
+    where
+        Self: Sized,
+        T: Unpin,
+    {
+        AsPinInit::new(self)
+    }
 }
 
 /// A trait to initialize a T

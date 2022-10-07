@@ -35,3 +35,5 @@ pub mod layout;
 
 #[cfg(feature = "alloc")]
 pub mod boxed;
+
+pub mod pin;
