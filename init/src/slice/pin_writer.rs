@@ -1,6 +1,9 @@
 use core::{marker::PhantomData, pin::Pin};
 
-use crate::{Init, PinInitialize, PinnedUninit, TryPinInitialize};
+use crate::{
+    traits::{PinInitialize, TryPinInitialize},
+    Init, PinnedUninit,
+};
 
 /// A writer to an uninitialized slice
 pub struct PinSliceWriter<'a, T> {
@@ -92,7 +95,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
         // * the current pointer came from an uninit
         // * the writer isn't finished yet
         // therefore the pointer is still in bounds
-        let output = unsafe { crate::try_pin_init_in_place(init, self.current) };
+        let output = unsafe { crate::raw::try_pin_init_in_place(init, self.current) };
 
         if output.is_ok() {
             // SAFETY: we aren't finished yet and the current slot was successfully initialized
@@ -126,7 +129,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
         // * the current pointer came from an uninit
         // * the writer isn't finished yet
         // therefore the pointer is still in bounds
-        unsafe { crate::pin_init_in_place(init, self.current) }
+        unsafe { crate::raw::pin_init_in_place(init, self.current) }
 
         // SAFETY: we aren't finished yet and the current slot was successfully initialized
         self.current = unsafe { self.current.add(1) };

@@ -7,7 +7,7 @@ use core::pin::Pin;
 pub use pin_writer::PinSliceWriter;
 pub use writer::SliceWriter;
 
-use crate::{TryInitialize, TryPinInitialize};
+use crate::traits::{TryInitialize, TryPinInitialize};
 
 /// Create a new slice initializer
 pub struct SliceInit<I>(I);

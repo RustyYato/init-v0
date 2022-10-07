@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
 
-use crate::{Init, Initialize, TryInitialize, Uninit};
+use crate::{
+    traits::{Initialize, TryInitialize},
+    Init, Uninit,
+};
 
 /// A writer to an uninitialized slice
 pub struct SliceWriter<'a, T> {
@@ -92,7 +95,7 @@ impl<'a, T> SliceWriter<'a, T> {
         // * the current pointer came from an uninit
         // * the writer isn't finished yet
         // therefore the pointer is still in bounds
-        let output = unsafe { crate::try_init_in_place(init, self.current) };
+        let output = unsafe { crate::raw::try_init_in_place(init, self.current) };
 
         if output.is_ok() {
             // SAFETY: we aren't finished yet and the current slot was successfully initialized
@@ -126,7 +129,7 @@ impl<'a, T> SliceWriter<'a, T> {
         // * the current pointer came from an uninit
         // * the writer isn't finished yet
         // therefore the pointer is still in bounds
-        unsafe { crate::init_in_place(init, self.current) }
+        unsafe { crate::raw::init_in_place(init, self.current) }
 
         // SAFETY: we aren't finished yet and the current slot was successfully initialized
         self.current = unsafe { self.current.add(1) };
