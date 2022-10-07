@@ -6,7 +6,7 @@ use core::{
     ptr::NonNull,
 };
 
-use crate::{pin::PinnedUninit, Init, Uninit};
+use crate::{pin_uninit::PinnedUninit, Init, Uninit};
 
 /// A layout provider takes a pair of an initializer and a type, and provides the layout that should be used for the type
 ///

@@ -20,9 +20,9 @@ extern crate std as alloc;
 
 mod ptr;
 
-use pin::PinnedUninit;
+use pin_uninit::PinnedUninit;
 pub use ptr::{Init, Uninit};
-pub mod pin;
+pub mod pin_uninit;
 
 pub mod func;
 pub mod raw;
