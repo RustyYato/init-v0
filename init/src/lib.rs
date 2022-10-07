@@ -18,9 +18,12 @@ extern crate std;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+#[doc(hidden)]
+pub mod macros;
+
 mod ptr;
 
-use pin_uninit::PinnedUninit;
+pub use pin_uninit::PinnedUninit;
 pub use ptr::{Init, Uninit};
 pub mod pin_uninit;
 

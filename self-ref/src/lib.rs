@@ -20,9 +20,7 @@ impl SelfRef {
     }
 
     pub fn new_in(value: i32, mut uninit: PinnedUninit<Self>) -> Pin<Init<Self>> {
-        let ptr = uninit.as_mut_ptr();
-
-        let current = unsafe { core::ptr::addr_of_mut!((*ptr).first) };
+        let current = init::project_pin!(Self, uninit, first).as_mut_ptr();
 
         uninit.write(Self {
             first: value,
