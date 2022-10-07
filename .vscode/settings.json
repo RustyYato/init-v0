@@ -1,10 +1,13 @@
 {
   "cSpell.words": [
     "combinators",
+    "generativity",
     "nonnull",
     "nonoverlapping",
     "pointee",
     "repr",
-    "Uninit"
+    "struct",
+    "Uninit",
+    "unsized"
   ]
 }
