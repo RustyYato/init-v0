@@ -1,8 +1,34 @@
 //! the fundamental traits that underpin this crate
 
-use core::pin::Pin;
+use core::{
+    alloc::{Layout, LayoutError},
+    pin::Pin,
+    ptr::NonNull,
+};
 
 use crate::{pin::PinnedUninit, Init, Uninit};
+
+/// A layout provider takes a pair of an initializer and a type, and provides the layout that should be used for the type
+///
+/// # Safety
+///
+/// * The layout of `T` must fit the allocation provided by `layout_for`
+/// * The `cast` function must return the same pointer that it was provided
+pub unsafe trait LayoutProvider<T: ?Sized> {
+    /// The layout of T, given the initializer
+    fn layout_for(&self) -> Result<Layout, LayoutError>;
+
+    /// Casts the pointer to `T`
+    fn cast(&self, ptr: *mut u8) -> *mut T;
+
+    /// Casts the pointer to `T`
+    fn cast_nonnull(&self, ptr: NonNull<u8>) -> NonNull<T> {
+        // SAFETY: the pointer is guaranteed to be non-null because
+        // Self::cast will return the same pointer that it was passed in
+        // and ptr is non-null
+        unsafe { NonNull::new_unchecked(self.cast(ptr.as_ptr())) }
+    }
+}
 
 /// A trait to initialize a T
 pub trait TryInitialize<T: ?Sized> {

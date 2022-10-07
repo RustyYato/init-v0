@@ -10,6 +10,14 @@
 )]
 #![no_std]
 
+#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
 mod ptr;
 
 use pin::PinnedUninit;
@@ -22,3 +30,8 @@ pub mod traits;
 
 pub mod iter;
 pub mod slice;
+
+pub mod layout;
+
+#[cfg(feature = "alloc")]
+pub mod boxed;
