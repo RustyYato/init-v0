@@ -1,6 +1,6 @@
 [workspace]
 
 members = [
-    'init',
+    'ip-init',
     'self-ref'
 ]

@@ -71,7 +71,7 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
 /// the state is guaranteed by this library. The function may give more guarantees.
 ///
 /// ```
-/// use init::{Uninit, Init};
+/// use ip_init::{Uninit, Init};
 /// fn init_me(ptr: Uninit<u8>) -> Init<u8> {
 ///     // ...
 /// #   todo!()

@@ -1,6 +1,6 @@
 use std::{marker::PhantomPinned, pin::Pin};
 
-use init::{pin_uninit::PinnedUninit, traits::PinInitialize, Init};
+use ip_init::{pin_uninit::PinnedUninit, traits::PinInitialize, Init};
 
 #[pin_project::pin_project]
 pub struct SelfRef {
@@ -16,11 +16,11 @@ unsafe impl Sync for SelfRef {}
 
 impl SelfRef {
     pub fn init(value: i32) -> impl PinInitialize<Self> {
-        init::func::PinInitFn::new(move |uninit| Self::new_in(value, uninit))
+        ip_init::func::PinInitFn::new(move |uninit| Self::new_in(value, uninit))
     }
 
     pub fn new_in(value: i32, mut uninit: PinnedUninit<Self>) -> Pin<Init<Self>> {
-        let current = init::project_pin!(Self, uninit, first).as_mut_ptr();
+        let current = ip_init::project_pin!(Self, uninit, first).as_mut_ptr();
 
         uninit.write(Self {
             first: value,
@@ -31,15 +31,15 @@ impl SelfRef {
     }
 
     pub fn new(value: i32) -> Pin<Box<Self>> {
-        init::boxed::emplace_pin(init::layout::SizedLayoutProvider, Self::init(value))
+        ip_init::boxed::emplace_pin(ip_init::layout::SizedLayoutProvider, Self::init(value))
     }
 
     pub fn many(value: i32, count: usize) -> Pin<Box<[Self]>> {
-        init::boxed::emplace_pin(
-            init::layout::SliceLayoutProvider(count),
-            init::func::PinInitFn::new(|uninit| {
+        ip_init::boxed::emplace_pin(
+            ip_init::layout::SliceLayoutProvider(count),
+            ip_init::func::PinInitFn::new(|uninit| {
                 let mut value = value;
-                let mut writer = init::slice::PinSliceWriter::new(uninit);
+                let mut writer = ip_init::slice::PinSliceWriter::new(uninit);
 
                 while !writer.is_finished() {
                     writer.init(Self::init(value));
