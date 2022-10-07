@@ -137,7 +137,7 @@ impl<T> DoubleEndedIterator for RawIter<T> {
     }
 }
 
-/// An iterator over uninit pointers
+/// An iterator over [`Uninit`] pointers
 pub struct UninitIter<'a, T> {
     raw: RawIter<T>,
     _lt: PhantomData<Uninit<'a, [T]>>,
@@ -197,7 +197,7 @@ impl<'a, T> DoubleEndedIterator for UninitIter<'a, T> {
     }
 }
 
-/// An iterator over Init pointers
+/// An iterator over [`Init<_>`] pointers
 pub struct InitIter<'a, T> {
     raw: RawIter<T>,
     _lt: PhantomData<Init<'a, [T]>>,
@@ -268,7 +268,7 @@ impl<'a, T> DoubleEndedIterator for InitIter<'a, T> {
     }
 }
 
-/// An iterator over uninit pointers
+/// An iterator over [`PinnedUninit`] pointers
 pub struct PinnedUninitIter<'a, T> {
     raw: UninitIter<'a, T>,
 }
@@ -323,7 +323,7 @@ impl<'a, T> DoubleEndedIterator for PinnedUninitIter<'a, T> {
     }
 }
 
-/// An iterator over init pointers
+/// An iterator over pin [`Pin<Init<_>>`] pointers
 pub struct PinnedInitIter<'a, T> {
     raw: InitIter<'a, T>,
 }

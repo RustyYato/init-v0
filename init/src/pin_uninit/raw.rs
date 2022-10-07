@@ -1,3 +1,5 @@
+#[cfg(doc)]
+use core::pin::Pin;
 use core::ptr::NonNull;
 
 use crate::Uninit;
@@ -40,7 +42,7 @@ impl<'a, T: ?Sized> PinnedUninit<'a, T> {
     ///  does not continue to maintain the pinning invariants that is a violation of
     ///  the API contract and may lead to undefined behavior in later (safe) operations.
     ///
-    /// If the underlying data is `Unpin`, [`Pin::into_inner] should be used instead.
+    /// If the underlying data is `Unpin`, [`Pin::into_inner`] should be used instead.
     pub unsafe fn into_inner_unchecked(self) -> Uninit<'a, T> {
         self.uninit
     }

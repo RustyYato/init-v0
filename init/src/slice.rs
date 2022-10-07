@@ -1,4 +1,7 @@
-//! slice initializers
+//! slice initializers and writers
+//!
+//! this allows you to safely initialize the entire uninitialized slice efficiently,
+//! and drop initialized elements on error.
 
 mod pin_writer;
 mod writer;
@@ -9,7 +12,7 @@ pub use writer::SliceWriter;
 
 use crate::traits::{TryInitialize, TryPinInitialize};
 
-/// Create a new slice initializer
+/// A slice initializer which clones the provided initializer to initialize each element
 pub struct SliceInit<I>(I);
 
 impl<I> SliceInit<I> {

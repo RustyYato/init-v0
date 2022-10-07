@@ -18,6 +18,26 @@ pub unsafe fn bind_pin<'a, T: ?Sized, U: ?Sized>(
     unsafe { crate::PinnedUninit::new_unchecked(crate::Uninit::from_raw(ptr)) }
 }
 
+/// Create an uninit stack slot
+#[macro_export]
+macro_rules! slot {
+    ($name:ident : $($type:ty)?) => {
+        let mut $name = $crate::macros::core::mem::MaybeUninit$(::<$type>)?::uninit();
+        let $name = $crate::Uninit::from_maybe_uninit(&mut $name);
+    };
+}
+
+/// Create an pinned uninit stack slot
+#[macro_export]
+macro_rules! slot_pin {
+    ($name:ident : $($type:ty)?) => {
+        let mut $name = $crate::macros::core::mem::MaybeUninit$(::<$type>)?::uninit();
+        let $name = unsafe { $crate::macros::core::pin::Pin::new_unchecked(&mut $name) };
+        let $name = $crate::PinnedUninit::from_maybe_uninit($name);
+    };
+}
+
+/// Project a uninit ptr to one of it's fields
 #[macro_export]
 macro_rules! project {
     ($type:path, $uninit:expr, $field:ident) => {
@@ -41,6 +61,7 @@ macro_rules! project {
     };
 }
 
+/// Project a uninit ptr to one of it's fields
 #[macro_export]
 macro_rules! project_pin {
     ($type:path, $uninit:expr, $field:ident) => {

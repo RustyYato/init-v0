@@ -4,6 +4,7 @@
     "nonnull",
     "nonoverlapping",
     "pointee",
+    "repr",
     "Uninit"
   ]
 }

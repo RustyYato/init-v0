@@ -1,4 +1,6 @@
 //! Layout providers
+//!
+//! A layout provider is a type which can specify what layout to use for a given type `T`
 
 use core::alloc::{Layout, LayoutError};
 
@@ -21,11 +23,11 @@ unsafe impl<T> LayoutProvider<T> for SizedLayoutProvider {
     }
 }
 
-/// a layout provider for sized types
-pub struct SliceLen(pub usize);
+/// a layout provider for slice types
+pub struct SliceLayoutProvider(pub usize);
 
 // SAFETY: this implementation always returns an error, which is fine
-unsafe impl<T> LayoutProvider<[T]> for SliceLen {
+unsafe impl<T> LayoutProvider<[T]> for SliceLayoutProvider {
     #[inline]
     fn layout_for(&self) -> Result<Layout, LayoutError> {
         Layout::array::<T>(self.0)

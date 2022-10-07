@@ -43,7 +43,7 @@ pub unsafe fn try_init_in_place<T: ?Sized, I: TryInitialize<T>>(
     }
 }
 
-/// Try to initialize the ptr in place
+/// Initialize the ptr in place
 ///
 /// if this function returns normally, then the ptr was initialized
 /// otherwise, then the ptr may not be initialized
@@ -74,7 +74,7 @@ pub unsafe fn init_in_place<T: ?Sized, I: Initialize<T>>(init: I, ptr: *mut T) {
     }
 }
 
-/// Try to initialize the ptr in place
+/// Try to pin initialize the ptr in place
 ///
 /// if this function returns Ok, then the ptr was initialized
 /// otherwise, then the ptr may not be initialized
@@ -116,7 +116,7 @@ pub unsafe fn try_pin_init_in_place<T: ?Sized, I: TryPinInitialize<T>>(
     }
 }
 
-/// Try to initialize the ptr in place
+/// Pin initialize the ptr in place
 ///
 /// if this function returns normally, then the ptr was initialized
 /// otherwise, then the ptr may not be initialized

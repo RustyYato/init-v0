@@ -34,7 +34,7 @@ impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F> 
     }
 }
 
-/// A function which will initialize without error
+/// A function which may initialize with error
 #[derive(Debug, Clone, Copy)]
 pub struct TryInitFn<F> {
     func: F,
@@ -60,7 +60,7 @@ impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> 
     }
 }
 
-/// A function which will initialize without error
+/// A function which will pin initialize without error
 #[derive(Debug, Clone, Copy)]
 pub struct PinInitFn<F> {
     func: F,
@@ -86,7 +86,7 @@ impl<F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>, T: ?Sized> TryPinInitialize<T> 
     }
 }
 
-/// A function which will initialize without error
+/// A function which may pin initialize with error
 #[derive(Debug, Clone, Copy)]
 pub struct TryPinInitFn<F> {
     func: F,

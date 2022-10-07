@@ -5,7 +5,7 @@ use crate::{
     Init, PinnedUninit,
 };
 
-/// A writer to an uninitialized slice
+/// A writer to a pinned uninitialized slice
 pub struct PinSliceWriter<'a, T> {
     uninit: PinnedUninit<'a, [T]>,
     current: *mut T,

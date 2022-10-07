@@ -1,4 +1,4 @@
-//! A combinator to convert from a `TryInitialize` to a `TryPinInitialize` and vice versa
+//! A combinator to convert from a [`TryInitialize`] to a [`TryPinInitialize`] and vice versa
 
 use core::pin::Pin;
 

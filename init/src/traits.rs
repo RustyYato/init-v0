@@ -6,7 +6,12 @@ use core::{
     ptr::NonNull,
 };
 
-use crate::{pin::AsPinInit, pin_uninit::PinnedUninit, Init, Uninit};
+use crate::{
+    pin::{AsInit, AsPinInit},
+    pin_uninit::PinnedUninit,
+    slice::SliceInit,
+    Init, Uninit,
+};
 
 /// A layout provider takes a pair of an initializer and a type, and provides the layout that should be used for the type
 ///
@@ -30,18 +35,21 @@ pub unsafe trait LayoutProvider<T: ?Sized> {
     }
 }
 
-/// A trait to initialize a T
+/// A trait to try to initialize a T
+///
+/// * for infallible initialization, use [`Initialize`]
+/// * for pinned initialization, use [`TryPinInitialize`]
 pub trait TryInitialize<T: ?Sized> {
     /// the error reported by this
     type Error;
 
     /// attempt to initialize the pointer
     ///
-    /// if this function returns Ok, then the ptr was initialized
+    /// if this function returns [`Ok`], then the ptr was initialized
     /// otherwise, then the ptr may not be initialized
     fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error>;
 
-    /// Convert this TryInitialize to a TryPinInitialize
+    /// Convert this [`TryInitialize`] to a [`TryPinInitialize`]
     fn to_pin_init(self) -> AsPinInit<Self>
     where
         Self: Sized,
@@ -49,27 +57,59 @@ pub trait TryInitialize<T: ?Sized> {
     {
         AsPinInit::new(self)
     }
+
+    /// Convert this initializer to a slice initializer
+    fn to_slice_init(self) -> SliceInit<Self>
+    where
+        Self: Clone,
+        T: Sized,
+    {
+        SliceInit::new(self)
+    }
 }
 
 /// A trait to initialize a T
+///
+/// * for infallible initialization, use [`PinInitialize`]
+/// * for normal initialization, use [`TryInitialize`]
 pub trait TryPinInitialize<T: ?Sized> {
     /// the error reported by this
     type Error;
 
     /// attempt to initialize the pointer
     ///
-    /// if this function returns Ok, then the ptr was initialized
+    /// if this function returns [`Ok`], then the ptr was initialized
     /// otherwise, then the ptr may not be initialized
     fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error>;
+
+    /// Convert this [`TryPinInitialize`] to a [`TryInitialize`]
+    fn to_init(self) -> AsInit<Self>
+    where
+        Self: Sized,
+        T: Unpin,
+    {
+        AsInit::new(self)
+    }
+
+    /// Convert this initializer to a slice initializer
+    fn to_slice_init(self) -> SliceInit<Self>
+    where
+        Self: Clone,
+        T: Sized,
+    {
+        SliceInit::new(self)
+    }
 }
 
-/// A trait to initialize a T
+/// A trait to initialize a T, this trait is automatically implemented for
+/// all valid instances of [`TryInitialize`]
 pub trait Initialize<T: ?Sized>: TryInitialize<T, Error = core::convert::Infallible> {
     /// initializes the ptr
     fn init(self, ptr: Uninit<T>) -> Init<T>;
 }
 
-/// A trait to initialize a T
+/// A trait to pin initialize a T, this trait is automatically implemented for
+/// all valid instances of [`TryPinInitialize`]
 pub trait PinInitialize<T: ?Sized>: TryPinInitialize<T, Error = core::convert::Infallible> {
     /// attempt to initialize the pointer
     ///

@@ -10,6 +10,8 @@ pub struct Uninit<'a, T: ?Sized> {
 }
 
 impl<'a, T: ?Sized> Uninit<'a, T> {
+    /// Create a pointer to uninitialized memory
+    ///
     /// # Safety
     ///
     /// The pointer must be
@@ -17,6 +19,7 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
     /// * allocated for T's layout
     /// * writable for T's layout
     /// * readable for T's layout after written to
+    /// * The pointer must uphold to guarantees for at least the entire lifetime 'a
     #[inline(always)]
     pub unsafe fn from_raw(ptr: *mut T) -> Self {
         // SAFETY: the pointer is non-null
@@ -24,6 +27,8 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
         unsafe { Self::from_raw_nonnull(NonNull::new_unchecked(ptr)) }
     }
 
+    /// Create a pointer to uninitialized memory
+    ///
     /// # Safety
     ///
     /// The pointer must be
@@ -69,6 +74,7 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
 /// use init::{Uninit, Init};
 /// fn init_me(ptr: Uninit<u8>) -> Init<u8> {
 ///     // ...
+/// #   todo!()
 /// }
 /// ```
 #[repr(transparent)]
@@ -83,6 +89,8 @@ unsafe impl<'a, T: Send> Send for Init<'a, T> {}
 unsafe impl<'a, T: Sync> Sync for Init<'a, T> {}
 
 impl<'a, T: ?Sized> Init<'a, T> {
+    /// Create a pointer to initialized memory
+    ///
     /// # Safety
     ///
     /// The pointer must be
@@ -98,6 +106,8 @@ impl<'a, T: ?Sized> Init<'a, T> {
         unsafe { Self::from_raw_nonnull(NonNull::new_unchecked(ptr)) }
     }
 
+    /// Create a pointer to initialized memory
+    ///
     /// # Safety
     ///
     /// The pointer must be

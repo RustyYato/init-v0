@@ -11,7 +11,7 @@ use ::alloc::{alloc, boxed::Box};
 
 use crate::traits::{LayoutProvider, TryInitialize, TryPinInitialize};
 
-/// Emplace failure error
+/// An error type that for failure to emplace in a heap allocation a value
 pub enum AllocError<E> {
     /// Initialization failed
     Init(E),
@@ -44,7 +44,7 @@ where
     }
 }
 
-/// create a new T, and initialize it in place
+/// create a new T, and pin initialize it in place
 pub fn emplace_pin<T: ?Sized, L, I>(provider: L, init: I) -> Pin<Box<T>>
 where
     I: TryPinInitialize<T>,
@@ -57,7 +57,7 @@ where
     }
 }
 
-/// create a new T, and initialize it in place
+/// create a new T, and attempt to initialize it in place
 pub fn try_emplace<T: ?Sized, L, I>(provider: L, init: I) -> Result<Box<T>, AllocError<I::Error>>
 where
     I: TryInitialize<T>,
@@ -112,7 +112,7 @@ where
     Ok(unsafe { Box::from_raw(ptr.as_ptr()) })
 }
 
-/// create a new T, and initialize it in place
+/// create a new T, and attempt to pin initialize it in place
 pub fn try_emplace_pin<T: ?Sized, L, I>(
     provider: L,
     init: I,
