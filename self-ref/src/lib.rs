@@ -36,6 +36,23 @@ impl SelfRef {
         init::boxed::emplace_pin(init::layout::SizedLayoutProvider, Self::init(value))
     }
 
+    pub fn many(value: i32, count: usize) -> Pin<Box<[Self]>> {
+        init::boxed::emplace_pin(
+            init::layout::SliceLen(count),
+            init::func::PinInitFn::new(|uninit| {
+                let mut value = value;
+                let mut writer = init::slice::PinSliceWriter::new(uninit);
+
+                while !writer.is_finished() {
+                    writer.init(Self::init(value));
+                    value += 1;
+                }
+
+                writer.finish()
+            }),
+        )
+    }
+
     pub fn get(self: Pin<&Self>) -> i32 {
         unsafe { *self.current }
     }
