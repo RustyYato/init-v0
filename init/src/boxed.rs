@@ -168,8 +168,9 @@ where
     core::mem::forget(alloc);
 
     // SAFETY: the pointer is now initialized and allocated via the global allocator
-    let boxed = unsafe { Box::from_raw(ptr.as_ptr()) };
-
-    // It's always safe to pin a Box<T>
-    Ok(Box::into_pin(boxed))
+    // raw pointers have the same layout as Box
+    // we avoid `Box::into_pin` to avoid re-tagging the box. Which is invalid because
+    // we may holding onto a self-referential type. And calling `Box::into_pin` would
+    // invalidate the internal self references
+    Ok(unsafe { core::mem::transmute(ptr) })
 }
