@@ -30,6 +30,14 @@ impl<'a, T: ?Sized + Unpin> PinnedUninit<'a, T> {
     }
 }
 
+impl<'a, T, const N: usize> PinnedUninit<'a, [T; N]> {
+    /// Convert a pointer to an array to a pointer to a slice
+    pub fn into_slice(self) -> PinnedUninit<'a, [T]> {
+        // SAFETY: we don't touch the pointee, so it stays in the pinned type state
+        unsafe { PinnedUninit::new_unchecked(self.into_inner_unchecked().into_slice()) }
+    }
+}
+
 impl<'a, T: ?Sized> PinnedUninit<'a, T> {
     unsafe fn map_initializer<F: FnOnce(Uninit<'_, T>) -> Init<'_, T>>(
         self,
