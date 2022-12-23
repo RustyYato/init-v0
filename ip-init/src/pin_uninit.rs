@@ -1,6 +1,9 @@
 //! The [`PinnedUninit`] type which is analogous to the non-existent [`Pin<Uninit<T>>`]
 
-use crate::{Init, Uninit};
+use crate::{
+    traits::{PinInitialize, TryPinInitialize},
+    Init, Uninit,
+};
 
 use core::{mem::MaybeUninit, pin::Pin};
 
@@ -63,6 +66,16 @@ impl<'a, T: ?Sized> PinnedUninit<'a, T> {
         // SAFETY: the pointee is untouched and the pointer is kept in the pinned type-state
         //         the initialization requirements are forwarded to [`PinnedUninit::assume_init`]
         unsafe { self.map_initializer(|uninit| uninit.assume_init()) }
+    }
+
+    /// Initialize this pointer
+    pub fn try_init<I: TryPinInitialize<T>>(self, init: I) -> Result<Pin<Init<'a, T>>, I::Error> {
+        init.try_pin_init(self)
+    }
+
+    /// Initialize this pointer
+    pub fn init<I: PinInitialize<T>>(self, init: I) -> Pin<Init<'a, T>> {
+        init.pin_init(self)
     }
 }
 

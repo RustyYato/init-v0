@@ -1,6 +1,6 @@
 //! A combinator to convert from a [`TryInitialize`] to a [`TryPinInitialize`] and vice versa
 
-use core::pin::Pin;
+use core::{marker::PhantomData, pin::Pin};
 
 use crate::{
     pin_uninit::PinnedUninit,
@@ -9,19 +9,23 @@ use crate::{
 };
 
 /// a combinator created from [`TryInitialize::to_pin_init`]
-pub struct AsPinInit<I> {
+pub struct AsPinInit<I, T: ?Sized> {
     init: I,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<I> AsPinInit<I> {
+impl<I, T: ?Sized> AsPinInit<I, T> {
     /// Create a new AsPinInit
     #[inline(always)]
     pub fn new(init: I) -> Self {
-        Self { init }
+        Self {
+            init,
+            _ty: PhantomData,
+        }
     }
 }
 
-impl<I: TryInitialize<T>, T: ?Sized> TryInitialize<T> for AsPinInit<I> {
+impl<I: TryInitialize<T>, T: ?Sized> TryInitialize<T> for AsPinInit<I, T> {
     type Error = I::Error;
 
     #[inline]
@@ -30,7 +34,7 @@ impl<I: TryInitialize<T>, T: ?Sized> TryInitialize<T> for AsPinInit<I> {
     }
 }
 
-impl<I: TryInitialize<T>, T: ?Sized + Unpin> TryPinInitialize<T> for AsPinInit<I> {
+impl<I: TryInitialize<T>, T: ?Sized + Unpin> TryPinInitialize<T> for AsPinInit<I, T> {
     type Error = I::Error;
 
     #[inline]
@@ -43,19 +47,23 @@ impl<I: TryInitialize<T>, T: ?Sized + Unpin> TryPinInitialize<T> for AsPinInit<I
 }
 
 /// a combinator created from [`TryInitialize::to_pin_init`]
-pub struct AsInit<I> {
+pub struct AsInit<I, T: ?Sized> {
     init: I,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<I> AsInit<I> {
+impl<I, T: ?Sized> AsInit<I, T> {
     /// Create a new AsPinInit
     #[inline(always)]
     pub fn new(init: I) -> Self {
-        Self { init }
+        Self {
+            init,
+            _ty: PhantomData,
+        }
     }
 }
 
-impl<I: TryPinInitialize<T>, T: ?Sized + Unpin> TryInitialize<T> for AsInit<I> {
+impl<I: TryPinInitialize<T>, T: ?Sized + Unpin> TryInitialize<T> for AsInit<I, T> {
     type Error = I::Error;
 
     #[inline]
@@ -67,7 +75,7 @@ impl<I: TryPinInitialize<T>, T: ?Sized + Unpin> TryInitialize<T> for AsInit<I> {
     }
 }
 
-impl<I: TryPinInitialize<T>, T: ?Sized> TryPinInitialize<T> for AsInit<I> {
+impl<I: TryPinInitialize<T>, T: ?Sized> TryPinInitialize<T> for AsInit<I, T> {
     type Error = I::Error;
 
     #[inline]

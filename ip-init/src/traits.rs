@@ -50,7 +50,7 @@ pub trait TryInitialize<T: ?Sized> {
     fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error>;
 
     /// Convert this [`TryInitialize`] to a [`TryPinInitialize`]
-    fn to_pin_init(self) -> AsPinInit<Self>
+    fn to_pin_init(self) -> AsPinInit<Self, T>
     where
         Self: Sized,
         T: Unpin,
@@ -83,7 +83,7 @@ pub trait TryPinInitialize<T: ?Sized> {
     fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error>;
 
     /// Convert this [`TryPinInitialize`] to a [`TryInitialize`]
-    fn to_init(self) -> AsInit<Self>
+    fn to_init(self) -> AsInit<Self, T>
     where
         Self: Sized,
         T: Unpin,
@@ -118,12 +118,21 @@ pub trait PinInitialize<T: ?Sized>: TryPinInitialize<T, Error = core::convert::I
     fn pin_init(self, ptr: PinnedUninit<T>) -> Pin<Init<T>>;
 }
 
-impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> for F {
-    type Error = E;
+impl<T> TryInitialize<T> for T {
+    type Error = core::convert::Infallible;
 
     #[inline]
-    fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
-        self(ptr)
+    fn try_init(self, ptr: crate::Uninit<T>) -> Result<crate::Init<T>, Self::Error> {
+        Ok(ptr.write(self))
+    }
+}
+
+impl<T> TryPinInitialize<T> for T {
+    type Error = core::convert::Infallible;
+
+    #[inline]
+    fn try_pin_init(self, ptr: crate::PinnedUninit<T>) -> Result<Pin<crate::Init<T>>, Self::Error> {
+        Ok(ptr.write(self))
     }
 }
 
@@ -134,17 +143,6 @@ impl<T: ?Sized, I: TryInitialize<T, Error = core::convert::Infallible>> Initiali
             Ok(init) => init,
             Err(err) => match err {},
         }
-    }
-}
-
-impl<F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>, E, T: ?Sized> TryPinInitialize<T>
-    for F
-{
-    type Error = E;
-
-    #[inline]
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error> {
-        self(ptr)
     }
 }
 

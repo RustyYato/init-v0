@@ -1,6 +1,6 @@
 //! combinators that allow writing custom initializers
 
-use core::pin::Pin;
+use core::{marker::PhantomData, pin::Pin};
 
 use crate::{
     pin_uninit::PinnedUninit,
@@ -10,22 +10,26 @@ use crate::{
 
 /// A function which will initialize without error
 #[derive(Debug, Clone, Copy)]
-pub struct InitFn<F> {
+pub struct InitFn<F, T: ?Sized> {
     func: F,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<F> InitFn<F> {
+impl<F, T: ?Sized> InitFn<F, T> {
     /// Create a new initializer for infallible functions
     #[inline]
-    pub fn new<T: ?Sized>(func: F) -> Self
+    pub fn new(func: F) -> Self
     where
         F: FnOnce(Uninit<T>) -> Init<T>,
     {
-        Self { func }
+        Self {
+            func,
+            _ty: PhantomData,
+        }
     }
 }
 
-impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F> {
+impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F, T> {
     type Error = core::convert::Infallible;
 
     #[inline]
@@ -36,22 +40,28 @@ impl<F: FnOnce(Uninit<T>) -> Init<T>, T: ?Sized> TryInitialize<T> for InitFn<F> 
 
 /// A function which may initialize with error
 #[derive(Debug, Clone, Copy)]
-pub struct TryInitFn<F> {
+pub struct TryInitFn<F, T: ?Sized> {
     func: F,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<F> TryInitFn<F> {
+impl<F, T: ?Sized> TryInitFn<F, T> {
     /// Create a new initializer for infallible functions
     #[inline]
-    pub fn new<T: ?Sized, E>(func: F) -> Self
+    pub fn new<E>(func: F) -> Self
     where
         F: FnOnce(Uninit<T>) -> Result<Init<T>, E>,
     {
-        Self { func }
+        Self {
+            func,
+            _ty: PhantomData,
+        }
     }
 }
 
-impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> for TryInitFn<F> {
+impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T>
+    for TryInitFn<F, T>
+{
     type Error = E;
 
     #[inline]
@@ -62,22 +72,28 @@ impl<F: FnOnce(Uninit<T>) -> Result<Init<T>, E>, E, T: ?Sized> TryInitialize<T> 
 
 /// A function which will pin initialize without error
 #[derive(Debug, Clone, Copy)]
-pub struct PinInitFn<F> {
+pub struct PinInitFn<F, T: ?Sized> {
     func: F,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<F> PinInitFn<F> {
+impl<F, T: ?Sized> PinInitFn<F, T> {
     /// Create a new initializer for infallible functions
     #[inline]
-    pub fn new<T: ?Sized>(func: F) -> Self
+    pub fn new(func: F) -> Self
     where
         F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>,
     {
-        Self { func }
+        Self {
+            func,
+            _ty: PhantomData,
+        }
     }
 }
 
-impl<F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>, T: ?Sized> TryPinInitialize<T> for PinInitFn<F> {
+impl<F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>, T: ?Sized> TryPinInitialize<T>
+    for PinInitFn<F, T>
+{
     type Error = core::convert::Infallible;
 
     #[inline]
@@ -88,23 +104,27 @@ impl<F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>, T: ?Sized> TryPinInitialize<T> 
 
 /// A function which may pin initialize with error
 #[derive(Debug, Clone, Copy)]
-pub struct TryPinInitFn<F> {
+pub struct TryPinInitFn<F, T: ?Sized> {
     func: F,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl<F> TryPinInitFn<F> {
+impl<F, T: ?Sized> TryPinInitFn<F, T> {
     /// Create a new initializer for infallible functions
     #[inline]
-    pub fn new<T: ?Sized, E>(func: F) -> Self
+    pub fn new<E>(func: F) -> Self
     where
         F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>,
     {
-        Self { func }
+        Self {
+            func,
+            _ty: PhantomData,
+        }
     }
 }
 
 impl<F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>, E, T: ?Sized> TryPinInitialize<T>
-    for TryPinInitFn<F>
+    for TryPinInitFn<F, T>
 {
     type Error = E;
 

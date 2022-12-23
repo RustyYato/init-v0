@@ -6,6 +6,8 @@ use core::{mem::MaybeUninit, ptr::NonNull};
 
 pub use raw::{Init, Uninit};
 
+use crate::traits::{Initialize, TryInitialize};
+
 impl<T> Default for Uninit<'_, [T]> {
     fn default() -> Self {
         let ptr = ptr::slice_from_raw_parts_mut(ptr::NonNull::dangling().as_ptr(), 0);
@@ -33,6 +35,16 @@ impl<'a, T: ?Sized> Uninit<'a, T> {
         // The pointee is a valid instance of T because of safety
         // condition on `assume_init`
         unsafe { Init::from_raw_nonnull(self.as_non_null_ptr()) }
+    }
+
+    /// Initialize this pointer
+    pub fn try_init<I: TryInitialize<T>>(self, init: I) -> Result<Init<'a, T>, I::Error> {
+        init.try_init(self)
+    }
+
+    /// Initialize this pointer
+    pub fn init<I: Initialize<T>>(self, init: I) -> Init<'a, T> {
+        init.init(self)
     }
 }
 

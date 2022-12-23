@@ -29,7 +29,7 @@ impl<I: TryInitialize<T> + Clone, T> TryInitialize<[T]> for SliceInit<I> {
         let mut writer = SliceWriter::new(ptr);
 
         while !writer.is_finished() {
-            writer.try_init(self.0.clone())?
+            writer.try_write(self.0.clone())?
         }
 
         Ok(writer.finish())
@@ -46,7 +46,7 @@ impl<I: TryPinInitialize<T> + Clone, T> TryPinInitialize<[T]> for SliceInit<I> {
         let mut writer = PinSliceWriter::new(ptr);
 
         while !writer.is_finished() {
-            writer.try_init(self.0.clone())?
+            writer.try_write(self.0.clone())?
         }
 
         Ok(writer.finish())
@@ -101,7 +101,7 @@ where
 
         while !writer.is_finished() {
             writer
-                .try_init(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
+                .try_write(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
                 .map_err(SliceIterInitError::Init)?
         }
 
@@ -123,7 +123,7 @@ where
 
         while !writer.is_finished() {
             writer
-                .try_init(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
+                .try_write(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
                 .map_err(SliceIterInitError::Init)?
         }
 

@@ -74,7 +74,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
     /// # Panics
     ///
     /// if the writer is finished, this function will panic
-    pub fn try_init<I: TryPinInitialize<T>>(&mut self, init: I) -> Result<(), I::Error> {
+    pub fn try_write<I: TryPinInitialize<T>>(&mut self, init: I) -> Result<(), I::Error> {
         assert!(!self.is_finished());
         // SAFETY: we're not finished yet
         unsafe { self.try_init_unchecked(init) }
