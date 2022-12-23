@@ -60,6 +60,18 @@ impl<'a, T> Uninit<'a, T> {
     }
 }
 
+impl<'a, T, const N: usize> Uninit<'a, [T; N]> {
+    /// Convert a pointer to an array to a pointer to a slice
+    pub fn into_slice(self) -> Uninit<'a, [T]> {
+        // SAFETY: the ptr is
+        // * allocated for T's layout
+        // * writable for T's layout
+        // * readable for T's layout after written
+        // because it's coming from an `Uninit`
+        unsafe { Uninit::from_raw_nonnull(self.as_non_null_ptr() as _) }
+    }
+}
+
 impl<'a, T> Uninit<'a, [T]> {
     /// Create an [`Uninit<'_, [T]>`](Uninit) from a pointer to a `[MaybeUninit<T>]`
     pub fn from_maybe_uninit_slice(ptr: &'a mut [MaybeUninit<T>]) -> Self {
@@ -143,5 +155,39 @@ impl<T: ?Sized> core::ops::DerefMut for Init<'_, T> {
         // SAFETY: the pointe is a valid instance of T
         // the pointer is valid for writes
         unsafe { &mut *self.as_mut_ptr() }
+    }
+}
+
+impl<'a, T, const N: usize> TryFrom<Uninit<'a, [T]>> for Uninit<'a, [T; N]> {
+    type Error = Uninit<'a, [T]>;
+
+    fn try_from(value: Uninit<'a, [T]>) -> Result<Self, Self::Error> {
+        if value.len() == N {
+            // SAFETY: the ptr is
+            // * allocated for T's layout
+            // * writable for T's layout
+            // * readable for T's layout after written
+            // because it's coming from an `Uninit`
+            Ok(unsafe { Uninit::from_raw_nonnull(value.as_non_null_ptr().cast()) })
+        } else {
+            Err(value)
+        }
+    }
+}
+
+impl<'a, T, const N: usize> TryFrom<Init<'a, [T]>> for Init<'a, [T; N]> {
+    type Error = Init<'a, [T]>;
+
+    fn try_from(value: Init<'a, [T]>) -> Result<Self, Self::Error> {
+        if value.len() == N {
+            // SAFETY: the ptr is
+            // * allocated for T's layout
+            // * writable for T's layout
+            // * readable for T's layout after written
+            // because it's coming from an `Uninit`
+            Ok(unsafe { Init::from_raw_nonnull(value.into_raw().cast()) })
+        } else {
+            Err(value)
+        }
     }
 }
