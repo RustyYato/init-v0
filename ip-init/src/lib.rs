@@ -31,6 +31,7 @@ pub mod func;
 pub mod raw;
 pub mod traits;
 
+pub mod array;
 pub mod iter;
 pub mod slice;
 
