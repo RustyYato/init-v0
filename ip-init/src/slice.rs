@@ -53,6 +53,25 @@ impl<I: TryPinInitialize<T> + Clone, T> TryPinInitialize<[T]> for SliceInit<I> {
     }
 }
 
+impl<I: TryInitialize<T> + Clone, T, const N: usize> TryInitialize<[T; N]> for SliceInit<I> {
+    type Error = I::Error;
+
+    fn try_init(self, ptr: crate::Uninit<[T; N]>) -> Result<crate::Init<[T; N]>, Self::Error> {
+        super::array::ArrayInit::new(self).try_init(ptr)
+    }
+}
+
+impl<I: TryPinInitialize<T> + Clone, T, const N: usize> TryPinInitialize<[T; N]> for SliceInit<I> {
+    type Error = I::Error;
+
+    fn try_pin_init(
+        self,
+        ptr: crate::PinnedUninit<[T; N]>,
+    ) -> Result<Pin<crate::Init<[T; N]>>, Self::Error> {
+        super::array::ArrayInit::new(self).try_pin_init(ptr)
+    }
+}
+
 /// A slice initializer which clones the provided initializer to initialize each element
 pub struct SliceIterInit<I>(I);
 
@@ -109,5 +128,30 @@ where
         }
 
         Ok(writer.finish())
+    }
+}
+
+impl<I: Iterator, T, const N: usize> TryInitialize<[T; N]> for SliceIterInit<I>
+where
+    I::Item: TryInitialize<T>,
+{
+    type Error = SliceIterInitError<<I::Item as TryInitialize<T>>::Error>;
+
+    fn try_init(self, ptr: crate::Uninit<[T; N]>) -> Result<crate::Init<[T; N]>, Self::Error> {
+        super::array::ArrayInit::new(self).try_init(ptr)
+    }
+}
+
+impl<I: Iterator, T, const N: usize> TryPinInitialize<[T; N]> for SliceIterInit<I>
+where
+    I::Item: TryPinInitialize<T>,
+{
+    type Error = SliceIterInitError<<I::Item as TryPinInitialize<T>>::Error>;
+
+    fn try_pin_init(
+        self,
+        ptr: crate::PinnedUninit<[T; N]>,
+    ) -> Result<Pin<crate::Init<[T; N]>>, Self::Error> {
+        super::array::ArrayInit::new(self).try_pin_init(ptr)
     }
 }
