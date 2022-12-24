@@ -16,7 +16,7 @@ impl<T> RawIter<T> {
         if Self::ZERO_SIZED {
             Self {
                 start: NonNull::dangling(),
-                end: ptr.len() as *const T,
+                end: core::ptr::invalid_mut(ptr.len()),
             }
         } else {
             let len = ptr.len();
@@ -48,7 +48,7 @@ impl<T> Iterator for RawIter<T> {
         if Self::ZERO_SIZED {
             let end = self.end as usize;
             let end = end.checked_sub(1)?;
-            self.end = end as _;
+            self.end = core::ptr::invalid_mut(end);
             Some(self.start)
         } else if self.end == self.start.as_ptr() {
             None
@@ -68,7 +68,7 @@ impl<T> Iterator for RawIter<T> {
         if Self::ZERO_SIZED {
             let end = self.end as usize;
             let end = end.checked_sub(n)?;
-            self.end = end as _;
+            self.end = core::ptr::invalid_mut(end);
             self.next()
         } else if self.len() >= n {
             self.end = self.start.as_ptr();

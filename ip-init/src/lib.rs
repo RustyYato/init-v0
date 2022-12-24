@@ -1,6 +1,6 @@
 //! Init is a crate that handles fallible in-place initialization
 
-#![feature(slice_ptr_len, dropck_eyepatch)]
+#![feature(slice_ptr_len, dropck_eyepatch, strict_provenance)]
 #![forbid(
     clippy::undocumented_unsafe_blocks,
     clippy::missing_safety_doc,
