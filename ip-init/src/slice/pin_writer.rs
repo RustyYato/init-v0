@@ -38,6 +38,34 @@ impl<'a, T> PinSliceWriter<'a, T> {
         }
     }
 
+    /// Try to apply the function to all remaining unintialized slots in the slice
+    /// and return the fully initialized slice, unless the function fails.
+    /// In which case return the error.
+    pub fn try_for_each<E>(
+        mut self,
+        mut f: impl FnMut(PinnedUninit<'_, T>) -> Result<Pin<Init<'_, T>>, E>,
+    ) -> Result<Pin<Init<'a, [T]>>, E> {
+        while !self.is_finished() {
+            self.try_write(crate::func::TryPinInitFn::new(&mut f))?
+        }
+
+        Ok(self.finish())
+    }
+
+    /// Apply the function to all remaining unintialized slots in the slice
+    /// and return the fully initialized slice
+    pub fn for_each<E>(
+        mut self,
+        mut f: impl FnMut(PinnedUninit<'_, T>) -> Pin<Init<'_, T>>,
+    ) -> Pin<Init<'a, [T]>> {
+        while !self.is_finished() {
+            self.try_write(crate::func::PinInitFn::new(&mut f))
+                .unwrap_or_else(|inf| match inf {})
+        }
+
+        self.finish()
+    }
+
     /// finish the writer and get an initialized slice
     ///
     /// # Panics

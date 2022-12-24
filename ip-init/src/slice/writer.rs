@@ -38,6 +38,31 @@ impl<'a, T> SliceWriter<'a, T> {
         }
     }
 
+    /// Try to apply the function to all remaining unintialized slots in the slice
+    /// and return the fully initialized slice, unless the function fails.
+    /// In which case return the error.
+    pub fn try_for_each<E>(
+        mut self,
+        mut f: impl FnMut(Uninit<'_, T>) -> Result<Init<'_, T>, E>,
+    ) -> Result<Init<'a, [T]>, E> {
+        while !self.is_finished() {
+            self.try_write(crate::func::TryInitFn::new(&mut f))?
+        }
+
+        Ok(self.finish())
+    }
+
+    /// Apply the function to all remaining unintialized slots in the slice
+    /// and return the fully initialized slice
+    pub fn for_each<E>(mut self, mut f: impl FnMut(Uninit<'_, T>) -> Init<'_, T>) -> Init<'a, [T]> {
+        while !self.is_finished() {
+            self.try_write(crate::func::InitFn::new(&mut f))
+                .unwrap_or_else(|inf| match inf {})
+        }
+
+        self.finish()
+    }
+
     /// finish the writer and get an initialized slice
     ///
     /// # Panics
