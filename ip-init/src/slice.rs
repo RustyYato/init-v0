@@ -26,13 +26,7 @@ impl<I: TryInitialize<T> + Clone, T> TryInitialize<[T]> for SliceInit<I> {
     type Error = I::Error;
 
     fn try_init(self, ptr: crate::Uninit<[T]>) -> Result<crate::Init<[T]>, Self::Error> {
-        let mut writer = SliceWriter::new(ptr);
-
-        while !writer.is_finished() {
-            writer.try_write(self.0.clone())?
-        }
-
-        Ok(writer.finish())
+        SliceWriter::new(ptr).try_for_each(|uninit| uninit.try_init(self.0.clone()))
     }
 }
 
@@ -43,13 +37,7 @@ impl<I: TryPinInitialize<T> + Clone, T> TryPinInitialize<[T]> for SliceInit<I> {
         self,
         ptr: crate::PinnedUninit<[T]>,
     ) -> Result<Pin<crate::Init<[T]>>, Self::Error> {
-        let mut writer = PinSliceWriter::new(ptr);
-
-        while !writer.is_finished() {
-            writer.try_write(self.0.clone())?
-        }
-
-        Ok(writer.finish())
+        PinSliceWriter::new(ptr).try_for_each(|uninit| uninit.try_init(self.0.clone()))
     }
 }
 
@@ -97,15 +85,11 @@ where
     type Error = SliceIterInitError<<I::Item as TryInitialize<T>>::Error>;
 
     fn try_init(mut self, ptr: crate::Uninit<[T]>) -> Result<crate::Init<[T]>, Self::Error> {
-        let mut writer = SliceWriter::new(ptr);
-
-        while !writer.is_finished() {
-            writer
-                .try_write(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
-                .map_err(SliceIterInitError::Init)?
-        }
-
-        Ok(writer.finish())
+        SliceWriter::new(ptr).try_for_each(|uninit| {
+            uninit
+                .try_init(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
+                .map_err(SliceIterInitError::Init)
+        })
     }
 }
 
@@ -119,15 +103,11 @@ where
         mut self,
         ptr: crate::PinnedUninit<[T]>,
     ) -> Result<Pin<crate::Init<[T]>>, Self::Error> {
-        let mut writer = PinSliceWriter::new(ptr);
-
-        while !writer.is_finished() {
-            writer
-                .try_write(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
-                .map_err(SliceIterInitError::Init)?
-        }
-
-        Ok(writer.finish())
+        PinSliceWriter::new(ptr).try_for_each(|uninit| {
+            uninit
+                .try_init(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
+                .map_err(SliceIterInitError::Init)
+        })
     }
 }
 
