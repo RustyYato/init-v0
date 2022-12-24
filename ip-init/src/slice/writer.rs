@@ -54,7 +54,7 @@ impl<'a, T> SliceWriter<'a, T> {
 
     /// Apply the function to all remaining unintialized slots in the slice
     /// and return the fully initialized slice
-    pub fn for_each<E>(mut self, mut f: impl FnMut(Uninit<'_, T>) -> Init<'_, T>) -> Init<'a, [T]> {
+    pub fn for_each(mut self, mut f: impl FnMut(Uninit<'_, T>) -> Init<'_, T>) -> Init<'a, [T]> {
         while !self.is_finished() {
             self.try_write(crate::func::InitFn::new(&mut f))
                 .unwrap_or_else(|inf| match inf {})

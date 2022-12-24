@@ -39,14 +39,10 @@ impl SelfRef {
             ip_init::layout::SliceLayoutProvider(count),
             ip_init::func::PinInitFn::new(|uninit| {
                 let mut value = value;
-                let mut writer = ip_init::slice::PinSliceWriter::new(uninit);
-
-                while !writer.is_finished() {
-                    writer.init(Self::init(value));
+                ip_init::slice::PinSliceWriter::new(uninit).for_each(|uninit| {
                     value += 1;
-                }
-
-                writer.finish()
+                    Self::new_in(uninit, value)
+                })
             }),
         )
     }

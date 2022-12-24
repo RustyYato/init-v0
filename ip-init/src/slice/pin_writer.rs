@@ -54,7 +54,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
 
     /// Apply the function to all remaining unintialized slots in the slice
     /// and return the fully initialized slice
-    pub fn for_each<E>(
+    pub fn for_each(
         mut self,
         mut f: impl FnMut(PinnedUninit<'_, T>) -> Pin<Init<'_, T>>,
     ) -> Pin<Init<'a, [T]>> {
