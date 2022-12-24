@@ -16,10 +16,10 @@ unsafe impl Sync for SelfRef {}
 
 impl SelfRef {
     pub fn init(value: i32) -> impl PinInitialize<Self> {
-        ip_init::func::PinInitFn::new(move |uninit| Self::new_in(value, uninit))
+        ip_init::func::PinInitFn::new(move |uninit| Self::new_in(uninit, value))
     }
 
-    pub fn new_in(value: i32, mut uninit: PinnedUninit<Self>) -> Pin<Init<Self>> {
+    pub fn new_in(mut uninit: PinnedUninit<Self>, value: i32) -> Pin<Init<Self>> {
         let current = ip_init::project_pin!(Self, uninit, first).as_mut_ptr();
 
         uninit.write(Self {
