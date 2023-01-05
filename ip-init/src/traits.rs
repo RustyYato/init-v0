@@ -8,7 +8,7 @@ use core::{
 
 use crate::{
     pin::{AsInit, AsPinInit},
-    pin_uninit::PinnedUninit,
+    pin_ptr::PinnedUninit,
     slice::SliceInit,
     Init, Uninit,
 };

@@ -2,7 +2,7 @@
 
 use core::{marker::PhantomData, mem, pin::Pin, ptr::NonNull};
 
-use crate::{pin_uninit::PinnedUninit, Init, Uninit};
+use crate::{pin_ptr::PinnedUninit, Init, Uninit};
 
 struct RawIter<T> {
     start: NonNull<T>,

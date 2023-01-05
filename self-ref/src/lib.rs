@@ -1,6 +1,6 @@
 use std::{marker::PhantomPinned, pin::Pin};
 
-use ip_init::{pin_uninit::PinnedUninit, traits::PinInitialize, Init};
+use ip_init::{pin_ptr::PinnedUninit, traits::PinInitialize, Init};
 
 #[pin_project::pin_project]
 pub struct SelfRef {

@@ -3,7 +3,7 @@
 use core::{marker::PhantomData, pin::Pin};
 
 use crate::{
-    pin_uninit::PinnedUninit,
+    pin_ptr::PinnedUninit,
     traits::{TryInitialize, TryPinInitialize},
     Init, Uninit,
 };

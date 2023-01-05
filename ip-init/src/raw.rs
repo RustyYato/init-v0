@@ -3,7 +3,7 @@
 use core::pin::Pin;
 
 use crate::{
-    pin_uninit::PinnedUninit,
+    pin_ptr::PinnedUninit,
     traits::{Initialize, PinInitialize, TryInitialize, TryPinInitialize},
     Uninit,
 };

@@ -23,9 +23,9 @@ pub mod macros;
 
 mod ptr;
 
-pub use pin_uninit::PinnedUninit;
+pub use pin_ptr::PinnedUninit;
 pub use ptr::{Init, Uninit};
-pub mod pin_uninit;
+pub mod pin_ptr;
 
 pub mod func;
 pub mod raw;
