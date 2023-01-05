@@ -1,6 +1,6 @@
 use std::{marker::PhantomPinned, pin::Pin};
 
-use ip_init::{pin_ptr::PinnedUninit, traits::PinInitialize, Init};
+use ip_init::{pin_ptr::PinnedUninit, traits::PinInitialize, PinnedInit};
 
 #[pin_project::pin_project]
 pub struct SelfRef {
@@ -19,7 +19,7 @@ impl SelfRef {
         ip_init::func::PinInitFn::new(move |uninit| Self::new_in(uninit, value))
     }
 
-    pub fn new_in(mut uninit: PinnedUninit<Self>, value: i32) -> Pin<Init<Self>> {
+    pub fn new_in(mut uninit: PinnedUninit<Self>, value: i32) -> PinnedInit<Self> {
         let current = ip_init::project_pin!(Self, uninit, first).as_mut_ptr();
 
         uninit.write(Self {

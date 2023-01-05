@@ -1,9 +1,7 @@
 //! sugary functions to initialize values behind raw pointers
 
-use core::pin::Pin;
-
 use crate::{
-    pin_ptr::PinnedUninit,
+    pin_ptr::{PinnedInit, PinnedUninit},
     traits::{Initialize, PinInitialize, TryInitialize, TryPinInitialize},
     Uninit,
 };
@@ -101,7 +99,7 @@ pub unsafe fn try_pin_init_in_place<T: ?Sized, I: TryPinInitialize<T>>(
         Err(err) => Err(err),
         Ok(init) => {
             // SAFETY: the pointee is untouched
-            let init = unsafe { Pin::into_inner_unchecked(init) };
+            let init = unsafe { PinnedInit::into_inner_unchecked(init) };
             let old = init.into_raw();
             debug_assert_eq!(
                 ptr,
@@ -139,8 +137,6 @@ pub unsafe fn pin_init_in_place<T: ?Sized, I: PinInitialize<T>>(init: I, ptr: *m
     match init.try_pin_init(uninit) {
         Err(err) => match err {},
         Ok(init) => {
-            // SAFETY: the pointee is untouched
-            let init = unsafe { Pin::into_inner_unchecked(init) };
             let old = init.into_raw();
             debug_assert_eq!(
                 ptr,

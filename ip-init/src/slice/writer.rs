@@ -56,8 +56,7 @@ impl<'a, T> SliceWriter<'a, T> {
     /// and return the fully initialized slice
     pub fn for_each(mut self, mut f: impl FnMut(Uninit<'_, T>) -> Init<'_, T>) -> Init<'a, [T]> {
         while !self.is_finished() {
-            self.try_write(crate::func::InitFn::new(&mut f))
-                .unwrap_or_else(|inf| match inf {})
+            self.write(crate::func::InitFn::new(&mut f))
         }
 
         self.finish()
@@ -103,6 +102,17 @@ impl<'a, T> SliceWriter<'a, T> {
         assert!(!self.is_finished());
         // SAFETY: we're not finished yet
         unsafe { self.try_init_unchecked(init) }
+    }
+
+    /// Try to initialize the next slot
+    ///
+    /// # Panics
+    ///
+    /// if the writer is finished, this function will panic
+    pub fn write<I: Initialize<T>>(&mut self, init: I) {
+        assert!(!self.is_finished());
+        // SAFETY: we're not finished yet
+        unsafe { self.init_unchecked(init) }
     }
 
     /// Try to initialize the next slot

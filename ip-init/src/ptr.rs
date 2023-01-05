@@ -1,6 +1,5 @@
 mod raw;
 
-use core::pin::Pin;
 use core::ptr;
 use core::{mem::MaybeUninit, ptr::NonNull};
 
@@ -199,28 +198,6 @@ impl<'a, T, const N: usize> TryFrom<Init<'a, [T]>> for Init<'a, [T; N]> {
             // * readable for T's layout after written
             // because it's coming from an `Uninit`
             Ok(unsafe { Init::from_raw_nonnull(value.into_raw().cast()) })
-        } else {
-            Err(value)
-        }
-    }
-}
-
-impl<'a, T, const N: usize> TryFrom<Pin<Init<'a, [T]>>> for Pin<Init<'a, [T; N]>> {
-    type Error = Pin<Init<'a, [T]>>;
-
-    fn try_from(value: Pin<Init<'a, [T]>>) -> Result<Self, Self::Error> {
-        if value.len() == N {
-            // SAFETY: the ptr is
-            // * allocated for T's layout
-            // * writable for T's layout
-            // * readable for T's layout after written
-            // because it's coming from an `Uninit`
-            // the pointee isn't touched, so it remains in the pinned type-state
-            Ok(unsafe {
-                Pin::new_unchecked(Init::from_raw_nonnull(
-                    Pin::into_inner_unchecked(value).into_raw().cast(),
-                ))
-            })
         } else {
             Err(value)
         }

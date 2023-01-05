@@ -5,7 +5,6 @@
 
 mod pin_writer;
 mod writer;
-use core::pin::Pin;
 
 pub use pin_writer::PinSliceWriter;
 pub use writer::SliceWriter;
@@ -36,7 +35,7 @@ impl<I: TryPinInitialize<T> + Clone, T> TryPinInitialize<[T]> for SliceInit<I> {
     fn try_pin_init(
         self,
         ptr: crate::PinnedUninit<[T]>,
-    ) -> Result<Pin<crate::Init<[T]>>, Self::Error> {
+    ) -> Result<crate::PinnedInit<[T]>, Self::Error> {
         PinSliceWriter::new(ptr).try_for_each(|uninit| uninit.try_init(self.0.clone()))
     }
 }
@@ -55,7 +54,7 @@ impl<I: TryPinInitialize<T> + Clone, T, const N: usize> TryPinInitialize<[T; N]>
     fn try_pin_init(
         self,
         ptr: crate::PinnedUninit<[T; N]>,
-    ) -> Result<Pin<crate::Init<[T; N]>>, Self::Error> {
+    ) -> Result<crate::PinnedInit<[T; N]>, Self::Error> {
         super::array::ArrayInit::new(self).try_pin_init(ptr)
     }
 }
@@ -102,7 +101,7 @@ where
     fn try_pin_init(
         mut self,
         ptr: crate::PinnedUninit<[T]>,
-    ) -> Result<Pin<crate::Init<[T]>>, Self::Error> {
+    ) -> Result<crate::PinnedInit<[T]>, Self::Error> {
         PinSliceWriter::new(ptr).try_for_each(|uninit| {
             uninit
                 .try_init(self.0.next().ok_or(SliceIterInitError::NotEnoughItems)?)
@@ -131,7 +130,7 @@ where
     fn try_pin_init(
         self,
         ptr: crate::PinnedUninit<[T; N]>,
-    ) -> Result<Pin<crate::Init<[T; N]>>, Self::Error> {
+    ) -> Result<crate::PinnedInit<[T; N]>, Self::Error> {
         super::array::ArrayInit::new(self).try_pin_init(ptr)
     }
 }

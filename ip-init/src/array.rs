@@ -3,8 +3,6 @@
 //! this allows you to safely initialize the entire uninitialized slice efficiently,
 //! and drop initialized elements on error.
 
-use core::pin::Pin;
-
 use crate::traits::{TryInitialize, TryPinInitialize};
 
 /// An array initializer
@@ -36,7 +34,7 @@ impl<I: TryPinInitialize<[T]>, T, const N: usize> TryPinInitialize<[T; N]> for A
     fn try_pin_init(
         self,
         ptr: crate::PinnedUninit<[T; N]>,
-    ) -> Result<Pin<crate::Init<[T; N]>>, Self::Error> {
+    ) -> Result<crate::PinnedInit<[T; N]>, Self::Error> {
         match self.0.try_pin_init(ptr.into_slice()) {
             // SAFETY: this init is guarnteed to be the same pointer as the `ptr` passed into `self.0.try_init`
             // So it has the correct length

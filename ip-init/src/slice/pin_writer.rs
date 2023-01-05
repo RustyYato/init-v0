@@ -1,8 +1,8 @@
-use core::{marker::PhantomData, pin::Pin};
+use core::marker::PhantomData;
 
 use crate::{
     traits::{PinInitialize, TryPinInitialize},
-    Init, PinnedUninit,
+    PinnedInit, PinnedUninit,
 };
 
 /// A writer to a pinned uninitialized slice
@@ -43,8 +43,8 @@ impl<'a, T> PinSliceWriter<'a, T> {
     /// In which case return the error.
     pub fn try_for_each<E>(
         mut self,
-        mut f: impl FnMut(PinnedUninit<'_, T>) -> Result<Pin<Init<'_, T>>, E>,
-    ) -> Result<Pin<Init<'a, [T]>>, E> {
+        mut f: impl FnMut(PinnedUninit<'_, T>) -> Result<PinnedInit<'_, T>, E>,
+    ) -> Result<PinnedInit<'a, [T]>, E> {
         while !self.is_finished() {
             self.try_write(crate::func::TryPinInitFn::new(&mut f))?
         }
@@ -56,8 +56,8 @@ impl<'a, T> PinSliceWriter<'a, T> {
     /// and return the fully initialized slice
     pub fn for_each(
         mut self,
-        mut f: impl FnMut(PinnedUninit<'_, T>) -> Pin<Init<'_, T>>,
-    ) -> Pin<Init<'a, [T]>> {
+        mut f: impl FnMut(PinnedUninit<'_, T>) -> PinnedInit<'_, T>,
+    ) -> PinnedInit<'a, [T]> {
         while !self.is_finished() {
             self.try_write(crate::func::PinInitFn::new(&mut f))
                 .unwrap_or_else(|inf| match inf {})
@@ -72,7 +72,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
     ///
     /// if the writer isn't finished, this function will panic
     #[inline]
-    pub fn finish(self) -> Pin<Init<'a, [T]>> {
+    pub fn finish(self) -> PinnedInit<'a, [T]> {
         assert!(self.is_finished());
         // SAFETY: this writer is finished
         unsafe { self.finish_unchecked() }
@@ -84,7 +84,7 @@ impl<'a, T> PinSliceWriter<'a, T> {
     ///
     /// if the writer must be finished
     #[inline]
-    pub unsafe fn finish_unchecked(mut self) -> Pin<Init<'a, [T]>> {
+    pub unsafe fn finish_unchecked(mut self) -> PinnedInit<'a, [T]> {
         let uninit = core::mem::take(&mut self.uninit);
         core::mem::forget(self);
         // SAFETY: a finished writer has initialized every element of the slice
@@ -106,6 +106,17 @@ impl<'a, T> PinSliceWriter<'a, T> {
         assert!(!self.is_finished());
         // SAFETY: we're not finished yet
         unsafe { self.try_init_unchecked(init) }
+    }
+
+    /// Try to initialize the next slot
+    ///
+    /// # Panics
+    ///
+    /// if the writer is finished, this function will panic
+    pub fn write<I: PinInitialize<T>>(&mut self, init: I) {
+        assert!(!self.is_finished());
+        // SAFETY: we're not finished yet
+        unsafe { self.init_unchecked(init) }
     }
 
     /// Try to initialize the next slot

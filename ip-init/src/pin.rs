@@ -1,9 +1,9 @@
 //! A combinator to convert from a [`TryInitialize`] to a [`TryPinInitialize`] and vice versa
 
-use core::{marker::PhantomData, pin::Pin};
+use core::marker::PhantomData;
 
 use crate::{
-    pin_ptr::PinnedUninit,
+    pin_ptr::{PinnedInit, PinnedUninit},
     traits::{TryInitialize, TryPinInitialize},
     Init, Uninit,
 };
@@ -38,9 +38,9 @@ impl<I: TryInitialize<T>, T: ?Sized + Unpin> TryPinInitialize<T> for AsPinInit<I
     type Error = I::Error;
 
     #[inline]
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error> {
+    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<PinnedInit<T>, Self::Error> {
         match self.init.try_init(ptr.into_inner()) {
-            Ok(init) => Ok(Pin::new(init)),
+            Ok(init) => Ok(PinnedInit::new(init)),
             Err(_) => todo!(),
         }
     }
@@ -69,7 +69,7 @@ impl<I: TryPinInitialize<T>, T: ?Sized + Unpin> TryInitialize<T> for AsInit<I, T
     #[inline]
     fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
         match self.init.try_pin_init(PinnedUninit::new(ptr)) {
-            Ok(init) => Ok(Pin::into_inner(init)),
+            Ok(init) => Ok(PinnedInit::into_inner(init)),
             Err(err) => Err(err),
         }
     }
@@ -79,7 +79,7 @@ impl<I: TryPinInitialize<T>, T: ?Sized> TryPinInitialize<T> for AsInit<I, T> {
     type Error = I::Error;
 
     #[inline]
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error> {
+    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<PinnedInit<T>, Self::Error> {
         self.init.try_pin_init(ptr)
     }
 }

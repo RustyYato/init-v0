@@ -1,11 +1,11 @@
 //! combinators that allow writing custom initializers
 
-use core::{marker::PhantomData, pin::Pin};
+use core::marker::PhantomData;
 
 use crate::{
     pin_ptr::PinnedUninit,
     traits::{TryInitialize, TryPinInitialize},
-    Init, Uninit,
+    Init, PinnedInit, Uninit,
 };
 
 /// A function which will initialize without error
@@ -82,7 +82,7 @@ impl<F, T: ?Sized> PinInitFn<F, T> {
     #[inline]
     pub fn new(func: F) -> Self
     where
-        F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>,
+        F: FnOnce(PinnedUninit<T>) -> PinnedInit<T>,
     {
         Self {
             func,
@@ -91,13 +91,13 @@ impl<F, T: ?Sized> PinInitFn<F, T> {
     }
 }
 
-impl<F: FnOnce(PinnedUninit<T>) -> Pin<Init<T>>, T: ?Sized> TryPinInitialize<T>
+impl<F: FnOnce(PinnedUninit<T>) -> PinnedInit<T>, T: ?Sized> TryPinInitialize<T>
     for PinInitFn<F, T>
 {
     type Error = core::convert::Infallible;
 
     #[inline]
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error> {
+    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<PinnedInit<T>, Self::Error> {
         Ok((self.func)(ptr))
     }
 }
@@ -114,7 +114,7 @@ impl<F, T: ?Sized> TryPinInitFn<F, T> {
     #[inline]
     pub fn new<E>(func: F) -> Self
     where
-        F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>,
+        F: FnOnce(PinnedUninit<T>) -> Result<PinnedInit<T>, E>,
     {
         Self {
             func,
@@ -123,13 +123,13 @@ impl<F, T: ?Sized> TryPinInitFn<F, T> {
     }
 }
 
-impl<F: FnOnce(PinnedUninit<T>) -> Result<Pin<Init<T>>, E>, E, T: ?Sized> TryPinInitialize<T>
+impl<F: FnOnce(PinnedUninit<T>) -> Result<PinnedInit<T>, E>, E, T: ?Sized> TryPinInitialize<T>
     for TryPinInitFn<F, T>
 {
     type Error = E;
 
     #[inline]
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error> {
+    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<PinnedInit<T>, Self::Error> {
         (self.func)(ptr)
     }
 }

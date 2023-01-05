@@ -23,7 +23,7 @@ pub mod macros;
 
 mod ptr;
 
-pub use pin_ptr::PinnedUninit;
+pub use pin_ptr::{PinnedInit, PinnedUninit};
 pub use ptr::{Init, Uninit};
 pub mod pin_ptr;
 

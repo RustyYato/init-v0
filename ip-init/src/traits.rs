@@ -2,13 +2,12 @@
 
 use core::{
     alloc::{Layout, LayoutError},
-    pin::Pin,
     ptr::NonNull,
 };
 
 use crate::{
     pin::{AsInit, AsPinInit},
-    pin_ptr::PinnedUninit,
+    pin_ptr::{PinnedInit, PinnedUninit},
     slice::SliceInit,
     Init, Uninit,
 };
@@ -80,7 +79,7 @@ pub trait TryPinInitialize<T: ?Sized> {
     ///
     /// if this function returns [`Ok`], then the ptr was initialized
     /// otherwise, then the ptr may not be initialized
-    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<Pin<Init<T>>, Self::Error>;
+    fn try_pin_init(self, ptr: PinnedUninit<T>) -> Result<PinnedInit<T>, Self::Error>;
 
     /// Convert this [`TryPinInitialize`] to a [`TryInitialize`]
     fn to_init(self) -> AsInit<Self, T>
@@ -115,14 +114,14 @@ pub trait PinInitialize<T: ?Sized>: TryPinInitialize<T, Error = core::convert::I
     ///
     /// if this function returns Ok, then the ptr was initialized
     /// otherwise, then the ptr may not be initialized
-    fn pin_init(self, ptr: PinnedUninit<T>) -> Pin<Init<T>>;
+    fn pin_init(self, ptr: PinnedUninit<T>) -> PinnedInit<T>;
 }
 
 impl<T> TryInitialize<T> for T {
     type Error = core::convert::Infallible;
 
     #[inline]
-    fn try_init(self, ptr: crate::Uninit<T>) -> Result<crate::Init<T>, Self::Error> {
+    fn try_init(self, ptr: Uninit<T>) -> Result<Init<T>, Self::Error> {
         Ok(ptr.write(self))
     }
 }
@@ -131,7 +130,10 @@ impl<T> TryPinInitialize<T> for T {
     type Error = core::convert::Infallible;
 
     #[inline]
-    fn try_pin_init(self, ptr: crate::PinnedUninit<T>) -> Result<Pin<crate::Init<T>>, Self::Error> {
+    fn try_pin_init(
+        self,
+        ptr: crate::PinnedUninit<T>,
+    ) -> core::result::Result<PinnedInit<'_, T>, core::convert::Infallible> {
         Ok(ptr.write(self))
     }
 }
@@ -147,7 +149,7 @@ impl<T: ?Sized, I: TryInitialize<T, Error = core::convert::Infallible>> Initiali
 }
 
 impl<T: ?Sized, I: TryPinInitialize<T, Error = core::convert::Infallible>> PinInitialize<T> for I {
-    fn pin_init(self, ptr: PinnedUninit<T>) -> Pin<Init<T>> {
+    fn pin_init(self, ptr: PinnedUninit<T>) -> PinnedInit<T> {
         match self.try_pin_init(ptr) {
             Ok(init) => init,
             Err(err) => match err {},
